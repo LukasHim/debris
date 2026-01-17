@@ -34,7 +34,7 @@ async function fetchHandler(request) {
   path = path.replace(/https:\/(?!\/)/g, 'https://');
   let redirect = false;
 
-  if (path == 'generate_204') {
+  if (request.method === 'OPTIONS' || path === 'generate_204') {
     return makeRes('', 204);
   }
   if (path.startsWith('generate_200')) {
@@ -98,7 +98,7 @@ async function fetchAndApply(host, request, options = {}) {
   }
 
   let out_headers = new Headers(response.headers);
-  if (out_headers.get('Content-Disposition') == 'attachment') out_headers.delete('Content-Disposition');
+  // if (out_headers.get('Content-Disposition') == 'attachment') out_headers.delete('Content-Disposition');
   let out_body = response.body;
 
   out_headers.set('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,DELETE,CONNECT,OPTIONS,TRACE,PATCH');
