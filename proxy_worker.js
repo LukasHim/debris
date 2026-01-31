@@ -86,10 +86,20 @@ async function handleCache(rest, request) {
     subPath = m[2];
   }
 
-  // 递归处理 cache 内的子路由
+  const cacheKey = new Request(request.url);
+
+  // 尝试读取缓存
+  if (['GET', 'HEAD'].includes(request.method)) {
+    const cached = await caches.default.match(cacheKey);
+    if (cached) {
+      return handleETag(request, cached);
+    }
+  }
+
+  // 缓存不存在，去获取资源
   const res = await routeInsideCache(subPath, request);
 
-  // GET / HEAD 才做缓存
+  // GET / HEAD 请求才缓存
   if (['GET', 'HEAD'].includes(request.method)) {
     const buf = await res.arrayBuffer();
     const etag = await genETag(buf);
@@ -101,7 +111,7 @@ async function handleCache(rest, request) {
     stripCookies(headers);
 
     const cachedRes = new Response(buf, { status: res.status, headers });
-    await caches.default.put(new Request(request.url), cachedRes.clone());
+    await caches.default.put(cacheKey, cachedRes.clone());
     return handleETag(request, cachedRes);
   }
 
