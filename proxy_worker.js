@@ -175,6 +175,8 @@ function buildFetchInit(request, opt) {
   headers.delete('Cookie');
   headers.delete('Referer');
 
+  if (!headers.get('Date')) headers.set('Date', new Date().toUTCString());
+
   const xCookie = request.headers.get('x-cookie');
   if (xCookie) headers.set('Cookie', xCookie);
 
