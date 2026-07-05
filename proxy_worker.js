@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const ASSET_URL = 'https://404.mise.eu.org/';
+const ASSET_URL = "https://404.mise.eu.org/";
 const DEFAULT_CACHE = 4 * 60 * 60; // 4h
 const MAX_CACHE = 31536000; // 1 year
 
@@ -16,11 +16,15 @@ function matchPrefix(path, prefix) {
 
 /* ================= headers ================= */
 function addBaseHeaders(headers) {
-  headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,DELETE,CONNECT,OPTIONS,TRACE,PATCH');
-  headers.set('Access-Control-Allow-Headers', '*,Authorization');
-  headers.set('Access-Control-Max-Age', '86400');
-  headers.set('Timing-Allow-Origin', '*');
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set(
+    "Access-Control-Allow-Methods",
+    "GET,HEAD,POST,PUT,DELETE,CONNECT,OPTIONS,TRACE,PATCH",
+  );
+  headers.set("Access-Control-Allow-Headers", "*,Authorization");
+  headers.set("Access-Control-Max-Age", "86400");
+  headers.set("Timing-Allow-Origin", "*");
+  headers.delete("Content-Security-Policy");
 }
 
 function makeRes(body, status = 200) {
@@ -35,7 +39,7 @@ export default {
     try {
       return await handler(request);
     } catch (e) {
-      return makeRes('Worker Error:\n' + e.stack, 502);
+      return makeRes("Worker Error:\n" + e.stack, 502);
     }
   },
 };
@@ -45,31 +49,32 @@ async function handler(request) {
   let path = u.href.slice(u.origin.length + 1);
 
   // 自动补全 http(s):/ → http(s)://
-  path = path.replace(/^https?:\/(?!\/)/, m => m + '/');
+  path = path.replace(/^https?:\/(?!\/)/, m => m + "/");
 
-  if (request.method === 'OPTIONS' || path === 'generate_204') return makeRes('', 204);
-  if (path.startsWith('generate_200')) return makeRes('', 200);
+  if (request.method === "OPTIONS" || path === "generate_204")
+    return makeRes("", 204);
+  if (path.startsWith("generate_200")) return makeRes("", 200);
 
   let m;
 
   /* ---------- cache ---------- */
-  m = matchPrefix(path, 'cache/');
+  m = matchPrefix(path, "cache/");
   if (m.match) return handleCache(m.rest, request);
 
   /* ---------- all ---------- */
-  m = matchPrefix(path, 'all/');
+  m = matchPrefix(path, "all/");
   if (m.match) return proxyFetch(m.rest, request, { redirect: true });
 
   /* ---------- set_referer ---------- */
-  m = matchPrefix(path, 'set_referer/');
+  m = matchPrefix(path, "set_referer/");
   if (m.match) return handleSetReferer(m.rest, request);
 
   /* ---------- keep_referer ---------- */
-  m = matchPrefix(path, 'keep_referer/');
+  m = matchPrefix(path, "keep_referer/");
   if (m.match) return handleKeepReferer(m.rest, request);
 
   /* ---------- normal proxy ---------- */
-  if (path.startsWith('http')) return proxyFetch(path, request, {});
+  if (path.startsWith("http")) return proxyFetch(path, request, {});
 
   return fetch(ASSET_URL);
 }
@@ -88,11 +93,11 @@ async function handleCache(rest, request) {
 
   const cacheKey = new Request(subPath);
 
-  if (['GET', 'HEAD'].includes(request.method)) {
+  if (["GET", "HEAD"].includes(request.method)) {
     // 尝试读取缓存
     let cached = await caches.default.match(cacheKey);
     if (cached) {
-      const ageHeader = cached.headers.get('Age');
+      const ageHeader = cached.headers.get("Age");
       if (ageHeader > ttl || ttl == 0) {
         // TTL 超过 → 删除缓存
         await caches.default.delete(cacheKey);
@@ -109,12 +114,12 @@ async function handleCache(rest, request) {
   const res = await routeInsideCache(subPath, request);
 
   // GET / HEAD 请求才缓存
-  if (['GET', 'HEAD'].includes(request.method)) {
+  if (["GET", "HEAD"].includes(request.method)) {
     const buf = await res.arrayBuffer();
     const etag = await genETag(buf);
     const headers = new Headers(res.headers);
-    headers.set('ETag', etag);
-    headers.set('Cache-Control', `public, max-age=${ttl}`);
+    headers.set("ETag", etag);
+    headers.set("Cache-Control", `public, max-age=${ttl}`);
     addBaseHeaders(headers);
     forwardSetCookie(headers);
     stripCookies(headers);
@@ -131,16 +136,16 @@ async function handleCache(rest, request) {
 async function routeInsideCache(path, request) {
   let m;
 
-  m = matchPrefix(path, 'all/');
+  m = matchPrefix(path, "all/");
   if (m.match) return proxyFetch(m.rest, request, { redirect: true });
 
-  m = matchPrefix(path, 'set_referer/');
+  m = matchPrefix(path, "set_referer/");
   if (m.match) return handleSetReferer(m.rest, request);
 
-  m = matchPrefix(path, 'keep_referer/');
+  m = matchPrefix(path, "keep_referer/");
   if (m.match) return handleKeepReferer(m.rest, request);
 
-  if (path.startsWith('http')) return proxyFetch(path, request, {});
+  if (path.startsWith("http")) return proxyFetch(path, request, {});
 
   return fetch(ASSET_URL);
 }
@@ -148,7 +153,7 @@ async function routeInsideCache(path, request) {
 /* ================= set_referer / keep_referer ================= */
 async function handleSetReferer(rest, request) {
   const match = rest.match(/.*(?=\/http)/);
-  if (!match) return makeRes('Bad Request', 400);
+  if (!match) return makeRes("Bad Request", 400);
 
   const referer = match[0];
   const realUrl = rest.slice(referer.length + 1);
@@ -156,7 +161,7 @@ async function handleSetReferer(rest, request) {
 }
 
 async function handleKeepReferer(rest, request) {
-  const referer = request.headers.get('Referer');
+  const referer = request.headers.get("Referer");
   return proxyFetch(rest, request, { referer });
 }
 
@@ -168,18 +173,23 @@ async function proxyFetch(url, request, opt) {
 
 function buildFetchInit(request, opt) {
   const headers = new Headers(request.headers);
-  headers.delete('Origin');
-  headers.delete('Cookie');
-  headers.delete('Referer');
+  headers.delete("Origin");
+  headers.delete("Cookie");
+  headers.delete("Referer");
 
-  const xCookie = request.headers.get('x-cookie');
-  if (xCookie) headers.set('Cookie', xCookie);
+  const xCookie = request.headers.get("x-cookie");
+  if (xCookie) headers.set("Cookie", xCookie);
 
-  if (opt.referer) headers.set('Referer', opt.referer);
+  if (opt.referer) headers.set("Referer", opt.referer);
 
-  const body = ['GET', 'HEAD'].includes(request.method) ? null : request.body;
+  const body = ["GET", "HEAD"].includes(request.method) ? null : request.body;
 
-  return { method: request.method, headers, body, redirect: opt.redirect ? 'follow' : 'manual' };
+  return {
+    method: request.method,
+    headers,
+    body,
+    redirect: opt.redirect ? "follow" : "manual",
+  };
 }
 
 function buildDownstreamResponse(request, res) {
@@ -192,19 +202,19 @@ function buildDownstreamResponse(request, res) {
 
 /* ================= cookie rules ================= */
 function stripCookies(headers) {
-  headers.delete('Cookie');
-  headers.delete('Set-Cookie');
+  headers.delete("Cookie");
+  headers.delete("Set-Cookie");
 }
 
 function forwardSetCookie(headers) {
-  const sc = headers.get('Set-Cookie');
-  if (sc) headers.set('x-set-cookie', sc);
+  const sc = headers.get("Set-Cookie");
+  if (sc) headers.set("x-set-cookie", sc);
 }
 
 /* ================= etag ================= */
 function handleETag(request, response) {
-  const inm = request.headers.get('If-None-Match');
-  const etag = response.headers.get('ETag');
+  const inm = request.headers.get("If-None-Match");
+  const etag = response.headers.get("ETag");
 
   if (etag && inm === etag) {
     return new Response(null, { status: 304, headers: response.headers });
@@ -213,6 +223,6 @@ function handleETag(request, response) {
 }
 
 async function genETag(buf) {
-  const hash = await crypto.subtle.digest('SHA-1', buf);
-  return `"${[...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('')}"`;
+  const hash = await crypto.subtle.digest("SHA-1", buf);
+  return `"${[...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("")}"`;
 }
