@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         i.pximg.net 403 Forbidden Fix
 // @namespace    LukasHim
-// @version      1.2
+// @version      1.3
 // @description  Fix Pixiv raw image 403 with responsive dark UI + Viewer.js
 // @author       LukasHim
 // @match        https://i.pximg.net/*
@@ -34,7 +34,7 @@
       borderRadius: "12px",
       background: "#0096fa",
       color: "#fff",
-      fontSize: "15px",
+      fontSize: "16px",
       fontWeight: "500",
       cursor: "pointer",
       whiteSpace: "nowrap",
@@ -97,7 +97,7 @@
     Object.assign(title.style, {
       margin: "0 0 20px",
       textAlign: "center",
-      fontSize: "20px",
+      fontSize: "24px",
     });
     const actions = document.createElement("div");
     Object.assign(actions.style, {
@@ -147,7 +147,7 @@
       background: "#0096fa",
       color: "#fff",
       textDecoration: "none",
-      fontSize: "15px",
+      fontSize: "16px",
       whiteSpace: "nowrap",
     });
     actions.appendChild(pixiv);
@@ -169,6 +169,7 @@
           width: "auto",
           height: "auto",
           maxWidth: "100%",
+          maxHeight: "85vh",
           borderRadius: "12px",
           marginBottom: "18px",
           cursor: "zoom-in",
